@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "build:cf": "npx cloudflare",
-    "deploy": "npm run build:cf && npx wrangler deploy",
-    "preview": "npm run build:cf && npx wrangler dev",
+    "build": "npx cloudflare",
+    "build:next": "next build",
+    "deploy": "npm run build && npx wrangler deploy",
+    "preview": "npm run build && npx wrangler dev",
     "start": "next start",
     "lint": "eslint",
     "deploy:cron": "cd workers/cron && npx wrangler deploy"
