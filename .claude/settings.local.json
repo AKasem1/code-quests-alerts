@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const pkg = require\\('./node_modules/next/package.json'\\); console.log\\(pkg.version\\)\")",
+      "Bash(npx tsc:*)",
+      "Bash(node -e \"require\\('nodemailer'\\); console.log\\('installed'\\)\")",
+      "Bash(npm install:*)",
+      "Bash(nslookup:*)",
+      "WebFetch(domain:ibb.co)"
+    ]
+  }
+}
