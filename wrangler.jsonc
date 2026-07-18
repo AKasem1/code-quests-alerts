@@ -1,10 +1,16 @@
 {
-  "name": "code-quests-subscriber",
+  "name": "code-quests-alerts",
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
+  },
+  "vars": {
+    "JWT_EXPIRES_IN": "7d",
+    "NEXT_PUBLIC_IMG_UPLOAD_KEY": "7018fb9a5ef8f5cc54c418520930ecfe",
+    "NEXT_PUBLIC_API_URL": "https://code-quests-alerts.abdelrahmankasem7.workers.dev",
+    "NODE_ENV": "production"
   }
 }
