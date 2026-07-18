@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const { name, email } = body as Record<string, unknown>;
+  const { name, email, categoryIds } = body as Record<string, unknown>;
 
   // Validate
   const rawName = typeof name === "string" ? name.trim() : "";
@@ -87,6 +87,23 @@ export async function POST(request: Request) {
   if (!emailRegex.test(rawEmail)) {
     return NextResponse.json(
       { error: "Please provide a valid email address." },
+      { status: 400 }
+    );
+  }
+
+  // Validate categoryIds
+  const validCategoryIds: number[] = [];
+  if (Array.isArray(categoryIds)) {
+    for (const id of categoryIds) {
+      if (typeof id === "number" && Number.isInteger(id) && id > 0) {
+        validCategoryIds.push(id);
+      }
+    }
+  }
+
+  if (validCategoryIds.length === 0) {
+    return NextResponse.json(
+      { error: "Please select at least one job category." },
       { status: 400 }
     );
   }
@@ -107,13 +124,17 @@ export async function POST(request: Request) {
       // Re-subscribe a previously unsubscribed user
       await collection.updateOne(
         { email: sanitizedEmail },
-        { $set: { name: sanitizedName, status: "subscribed" }, $unset: { unsubscribedAt: "" } }
+        {
+          $set: { name: sanitizedName, status: "subscribed", categoryIds: validCategoryIds },
+          $unset: { unsubscribedAt: "" },
+        }
       );
     } else {
       await collection.insertOne({
         name: sanitizedName,
         email: sanitizedEmail,
         status: "subscribed",
+        categoryIds: validCategoryIds,
         createdAt: new Date(),
       });
     }

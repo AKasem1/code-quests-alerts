@@ -1,9 +1,15 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useState, useEffect } from "react";
 import { User, Mail, Bell } from "lucide-react";
+import SubscriptionSuccess from "./SubscriptionSuccess";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+interface Category {
+  cqId: number;
+  name: string;
+}
 
 type SubscriberFormProps = {
   onSuccess?: (message: string) => void;
@@ -12,9 +18,27 @@ type SubscriberFormProps = {
 export default function SubscriberForm({ onSuccess }: SubscriberFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((data: Category[]) => {
+        if (Array.isArray(data)) setCategories(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  function toggleCategory(cqId: number) {
+    setSelectedIds((prev) =>
+      prev.includes(cqId) ? prev.filter((id) => id !== cqId) : [...prev, cqId]
+    );
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,20 +47,22 @@ export default function SubscriberForm({ onSuccess }: SubscriberFormProps) {
     const trimmedEmail = email.trim().toLowerCase();
 
     if (!trimmedName) {
-      setStatus("error");
-      setMessage("Please enter your name.");
+      setErrorMessage("Please enter your name.");
       return;
     }
 
     if (!emailRegex.test(trimmedEmail)) {
-      setStatus("error");
-      setMessage("Please enter a valid email address.");
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
+    if (selectedIds.length === 0) {
+      setErrorMessage("Please select at least one job category.");
       return;
     }
 
     setIsSubmitting(true);
-    setStatus("idle");
-    setMessage("");
+    setErrorMessage("");
 
     try {
       const response = await fetch("/api/subscribers", {
@@ -44,7 +70,11 @@ export default function SubscriberForm({ onSuccess }: SubscriberFormProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: trimmedName, email: trimmedEmail }),
+        body: JSON.stringify({
+          name: trimmedName,
+          email: trimmedEmail,
+          categoryIds: selectedIds,
+        }),
       });
 
       const data = await response.json();
@@ -53,18 +83,27 @@ export default function SubscriberForm({ onSuccess }: SubscriberFormProps) {
         throw new Error(data.error || "Unable to save your subscription right now.");
       }
 
-      setStatus("success");
-      setMessage(data.message || "Thanks for subscribing!");
+      setSuccessMessage(data.message || "Thanks for subscribing!");
       setName("");
       setEmail("");
+      setSelectedIds([]);
+      setShowSuccess(true);
       onSuccess?.(data.message || "Thanks for subscribing!");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unexpected error";
-      setStatus("error");
-      setMessage(errorMessage);
+      const msg = error instanceof Error ? error.message : "Unexpected error";
+      setErrorMessage(msg);
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (showSuccess) {
+    return (
+      <SubscriptionSuccess
+        message={successMessage}
+        onReset={() => setShowSuccess(false)}
+      />
+    );
   }
 
   return (
@@ -109,6 +148,46 @@ export default function SubscriberForm({ onSuccess }: SubscriberFormProps) {
         </div>
       </div>
 
+      {categories.length > 0 && (
+        <div className="mb-5">
+          <p className="mb-2 text-left text-sm font-medium text-slate-700">
+            Job categories
+          </p>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+            {categories.map((cat) => {
+              const checked = selectedIds.includes(cat.cqId);
+              return (
+                <label
+                  key={cat.cqId}
+                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+                    checked
+                      ? "border-[#F26722] bg-[#FFF6F1] text-[#F26722]"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleCategory(cat.cqId)}
+                    className="sr-only"
+                  />
+                  <span
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
+                      checked
+                        ? "border-[#F26722] bg-[#F26722] text-white"
+                        : "border-slate-300 bg-white"
+                    }`}
+                  >
+                    {checked && "✓"}
+                  </span>
+                  <span className="truncate text-xs font-medium">{cat.name}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <button
         type="submit"
         disabled={isSubmitting}
@@ -118,12 +197,9 @@ export default function SubscriberForm({ onSuccess }: SubscriberFormProps) {
         {isSubmitting ? "Subscribing..." : "Subscribe to Job Alerts"}
       </button>
 
-      {message ? (
-        <p
-          className={`mt-3 text-xs ${status === "success" ? "text-emerald-600" : "text-rose-600"}`}
-          role="status"
-        >
-          {message}
+      {errorMessage ? (
+        <p className="mt-3 text-xs text-rose-600" role="status">
+          {errorMessage}
         </p>
       ) : null}
     </form>

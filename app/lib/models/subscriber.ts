@@ -6,6 +6,8 @@ export interface Subscriber {
   name: string;
   email: string;
   status: "subscribed" | "unsubscribed";
+  /** Code Quests category IDs the subscriber wants alerts for */
+  categoryIds: number[];
   createdAt: Date;
   unsubscribedAt?: Date;
 }
