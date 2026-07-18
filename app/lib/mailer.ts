@@ -1,17 +1,11 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-function createTransport() {
-  const user = process.env.COMPANY_EMAIL?.trim();
-  const pass = process.env.COMPANY_EMAIL_PASSWORD?.trim();
-
-  if (!user || !pass) {
-    throw new Error("COMPANY_EMAIL or COMPANY_EMAIL_PASSWORD environment variable is not set");
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY environment variable is not set");
   }
-
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: { user, pass },
-  });
+  return new Resend(apiKey);
 }
 
 export async function sendEmail(options: {
@@ -19,11 +13,17 @@ export async function sendEmail(options: {
   subject: string;
   html: string;
 }) {
-  const transporter = createTransport();
-  await transporter.sendMail({
-    from: `"Code Quests" <${process.env.COMPANY_EMAIL?.trim()}>`,
+  const resend = getResendClient();
+  const fromEmail = process.env.COMPANY_EMAIL?.trim() || "onboarding@resend.dev";
+
+  const { error } = await resend.emails.send({
+    from: `Code Quests <${fromEmail}>`,
     to: options.to,
     subject: options.subject,
     html: options.html,
   });
+
+  if (error) {
+    throw new Error(`Resend error: ${error.message}`);
+  }
 }
