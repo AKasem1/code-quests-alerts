@@ -5,8 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:cf": "npx cloudflare",
+    "deploy": "npm run build:cf && npx wrangler deploy",
+    "preview": "npm run build:cf && npx wrangler dev",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy:cron": "cd workers/cron && npx wrangler deploy"
   },
   "dependencies": {
     "@types/nodemailer": "^8.0.1",
@@ -18,6 +22,8 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260718.1",
+    "@opennextjs/cloudflare": "^1.20.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -25,6 +31,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.112.0"
   }
 }
