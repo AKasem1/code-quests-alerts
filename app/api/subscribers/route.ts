@@ -139,18 +139,20 @@ export async function POST(request: Request) {
       });
     }
 
-    // Send confirmation email (non-blocking — do not fail the response if email fails)
+    // Send confirmation email
     const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
     const unsubscribeToken = signToken(sanitizedEmail);
     const unsubscribeUrl = `${baseUrl}/api/unsubscribe?token=${unsubscribeToken}`;
 
-    sendEmail({
-      to: sanitizedEmail,
-      subject: "You're subscribed to Code Quests Job Alerts!",
-      html: subscriptionConfirmationEmail({ name: sanitizedName, unsubscribeUrl }),
-    }).catch((err) => {
+    try {
+      await sendEmail({
+        to: sanitizedEmail,
+        subject: "You're subscribed to Code Quests Job Alerts!",
+        html: subscriptionConfirmationEmail({ name: sanitizedName, unsubscribeUrl }),
+      });
+    } catch (err) {
       console.error("[/api/subscribers] Failed to send confirmation email:", err);
-    });
+    }
 
     return NextResponse.json({ message: "Thanks for subscribing!" }, { status: 201 });
   } catch (error) {

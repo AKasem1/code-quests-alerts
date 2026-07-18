@@ -37,16 +37,18 @@ export async function GET(request: Request) {
 
     // Send unsubscription confirmation email
     const resubscribeUrl = baseUrl;
-    sendEmail({
-      to: email,
-      subject: "You've been unsubscribed from Code Quests",
-      html: unsubscriptionConfirmationEmail({
-        name: subscriber.name,
-        resubscribeUrl,
-      }),
-    }).catch((err) => {
+    try {
+      await sendEmail({
+        to: email,
+        subject: "You've been unsubscribed from Code Quests",
+        html: unsubscriptionConfirmationEmail({
+          name: subscriber.name,
+          resubscribeUrl,
+        }),
+      });
+    } catch (err) {
       console.error("[/api/unsubscribe] Failed to send unsubscription email:", err);
-    });
+    }
 
     return NextResponse.redirect(`${baseUrl}?status=unsubscribed`);
   } catch (error) {
